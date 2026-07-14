@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { Providers } from "@/src/components/providers";
 import "./globals.css";
 
 const geist = Geist({
@@ -7,7 +8,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Track",
+  title: "Track System",
   description: "Sistema de rastreamento de entregas",
 };
 
@@ -16,7 +17,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
-      <body className={geist.className}>{children}</body>
+      <body className={`${geist.className} bg-slate-100 text-slate-900`}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

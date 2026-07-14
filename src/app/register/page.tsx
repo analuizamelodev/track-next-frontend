@@ -1,9 +1,5 @@
-import RegisterCard from "../../components/register-card";
+import { redirect } from "next/navigation";
 
-export default function Register() {
-    return (
-        <div className="flex items-center justify-center h-screen">
-            <RegisterCard />
-        </div>
-    );
+export default function RegisterPage() {
+  redirect("/login");
 }

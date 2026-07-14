@@ -1,25 +1,33 @@
 import { apiClient } from "../libs/api";
-import { CreateCustomerDto, UpdateCustomerDto } from "../types/customers-types";
+import {
+  CreateCustomerDto,
+  Customer,
+  UpdateCustomerDto,
+} from "../types/customers-types";
 
-export function create(data: CreateCustomerDto) {
-    return apiClient.post("/customers", data);
+export async function create(data: CreateCustomerDto): Promise<Customer> {
+  const response = await apiClient.post<Customer>("/customers", data);
+  return response.data;
 }
 
-export function findAll() {
-    return apiClient.get("/customers");
+export async function findAll(): Promise<Customer[]> {
+  const response = await apiClient.get<Customer[]>("/customers");
+  return response.data;
 }
 
-export function findOne(id: string) {
-    return apiClient.get(`/customers/${id}`);
+export async function findOne(id: string): Promise<Customer> {
+  const response = await apiClient.get<Customer>(`/customers/${id}`);
+  return response.data;
 }
 
-export function update(
-    id: string,
-    data: UpdateCustomerDto,
-) {
-    return apiClient.patch(`/customers/${id}`, data);
+export async function update(
+  id: string,
+  data: UpdateCustomerDto,
+): Promise<Customer> {
+  const response = await apiClient.patch<Customer>(`/customers/${id}`, data);
+  return response.data;
 }
 
-export function remove(id: string) {
-    return apiClient.delete(`/customers/${id}`);
+export async function remove(id: string): Promise<void> {
+  await apiClient.delete(`/customers/${id}`);
 }
