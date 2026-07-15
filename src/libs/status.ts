@@ -11,7 +11,9 @@ export enum ShipmentStatus {
   DESTINATARIO_AUSENTE = 10,
 }
 
-export const STATUS_LABELS: Record<number, string> = {
+type RequiredField = "location" | "description";
+
+export const STATUS_LABELS: Record<ShipmentStatus, string> = {
   [ShipmentStatus.ORDER_CREATED]: "Pedido criado",
   [ShipmentStatus.IN_PREPARATION]: "Em preparação",
   [ShipmentStatus.IN_TRANSIT]: "Em trânsito",
@@ -24,7 +26,7 @@ export const STATUS_LABELS: Record<number, string> = {
   [ShipmentStatus.DESTINATARIO_AUSENTE]: "Destinatário ausente",
 };
 
-export const STATUS_COLORS: Record<number, string> = {
+export const STATUS_COLORS: Record<ShipmentStatus, string> = {
   [ShipmentStatus.ORDER_CREATED]: "bg-slate-100 text-slate-700",
   [ShipmentStatus.IN_PREPARATION]: "bg-yellow-50 text-yellow-800",
   [ShipmentStatus.IN_TRANSIT]: "bg-blue-50 text-blue-800",
@@ -37,99 +39,129 @@ export const STATUS_COLORS: Record<number, string> = {
   [ShipmentStatus.DESTINATARIO_AUSENTE]: "bg-purple-50 text-purple-800",
 };
 
-/** Transições via PATCH /status — DELIVERED e CANCELLED têm endpoints dedicados */
-const STATUS_TRANSITIONS: Record<number, number[]> = {
+/**
+ * Espelho exato de STATUS_TRANSITIONS do backend.
+ * IN_TRANSIT inclui ele mesmo para permitir múltiplas movimentações.
+ */
+const STATUS_TRANSITIONS: Record<ShipmentStatus, ShipmentStatus[]> = {
   [ShipmentStatus.ORDER_CREATED]: [ShipmentStatus.IN_PREPARATION],
+
   [ShipmentStatus.IN_PREPARATION]: [ShipmentStatus.IN_TRANSIT],
+
   [ShipmentStatus.IN_TRANSIT]: [
+    ShipmentStatus.IN_TRANSIT,
     ShipmentStatus.OUT_FOR_DELIVERY,
     ShipmentStatus.EXTRAVIADO,
     ShipmentStatus.DANIFICADO,
     ShipmentStatus.ENDERECO_INVALIDO,
-    ShipmentStatus.DESTINATARIO_AUSENTE,
   ],
+
   [ShipmentStatus.OUT_FOR_DELIVERY]: [
-    ShipmentStatus.EXTRAVIADO,
-    ShipmentStatus.DANIFICADO,
-    ShipmentStatus.ENDERECO_INVALIDO,
     ShipmentStatus.DESTINATARIO_AUSENTE,
+    ShipmentStatus.DANIFICADO,
   ],
+
   [ShipmentStatus.DELIVERED]: [],
+
   [ShipmentStatus.CANCELLED]: [],
+
   [ShipmentStatus.EXTRAVIADO]: [],
+
   [ShipmentStatus.DANIFICADO]: [],
-  [ShipmentStatus.ENDERECO_INVALIDO]: [ShipmentStatus.OUT_FOR_DELIVERY],
+
+  [ShipmentStatus.ENDERECO_INVALIDO]: [],
+
   [ShipmentStatus.DESTINATARIO_AUSENTE]: [
     ShipmentStatus.OUT_FOR_DELIVERY,
-    ShipmentStatus.EXTRAVIADO,
   ],
 };
 
-const CANCELLABLE_FROM = new Set([
+const CANCELLABLE_FROM = new Set<ShipmentStatus>([
   ShipmentStatus.ORDER_CREATED,
   ShipmentStatus.IN_PREPARATION,
-  ShipmentStatus.ENDERECO_INVALIDO,
-  ShipmentStatus.DESTINATARIO_AUSENTE,
-]);
-
-const FINISHABLE_FROM = new Set([
-  ShipmentStatus.OUT_FOR_DELIVERY,
-  ShipmentStatus.DANIFICADO,
-]);
-
-const PROBLEM_STATUSES = new Set([
   ShipmentStatus.EXTRAVIADO,
   ShipmentStatus.DANIFICADO,
   ShipmentStatus.ENDERECO_INVALIDO,
   ShipmentStatus.DESTINATARIO_AUSENTE,
 ]);
 
-export function getStatusLabel(status: number): string {
+const FINISHABLE_FROM = new Set<ShipmentStatus>([
+  ShipmentStatus.OUT_FOR_DELIVERY,
+]);
+
+const PROBLEM_STATUSES = new Set<ShipmentStatus>([
+  ShipmentStatus.EXTRAVIADO,
+  ShipmentStatus.DANIFICADO,
+  ShipmentStatus.ENDERECO_INVALIDO,
+  ShipmentStatus.DESTINATARIO_AUSENTE,
+]);
+
+// Record<number, ...> para permitir indexação por number (shipment.status vem do Prisma como number)
+export const REQUIRED_FOR_STATUS: Record<number, RequiredField[] | undefined> = {
+  [ShipmentStatus.IN_TRANSIT]:           ["location"],
+  [ShipmentStatus.OUT_FOR_DELIVERY]:     ["location"],
+  [ShipmentStatus.DESTINATARIO_AUSENTE]: ["description"],
+  [ShipmentStatus.ENDERECO_INVALIDO]:    ["description"],
+  [ShipmentStatus.DANIFICADO]:           ["description"],
+  [ShipmentStatus.EXTRAVIADO]:           ["description"],
+};
+
+export function getStatusLabel(status: ShipmentStatus): string {
   return STATUS_LABELS[status] ?? "Desconhecido";
 }
 
-export function getStatusColor(status: number): string {
+export function getStatusColor(status: ShipmentStatus): string {
   return STATUS_COLORS[status] ?? "bg-slate-100 text-slate-700";
 }
 
-export function getAllowedNextStatuses(current: number): number[] {
+export function getAllowedNextStatuses(
+  current: ShipmentStatus,
+): ShipmentStatus[] {
   return STATUS_TRANSITIONS[current] ?? [];
 }
 
-export function getForwardStatuses(current: number): number[] {
+export function getForwardStatuses(
+  current: ShipmentStatus,
+): ShipmentStatus[] {
   return getAllowedNextStatuses(current).filter(
-    (s) => !PROBLEM_STATUSES.has(s as ShipmentStatus),
+    (status) => status !== current && !PROBLEM_STATUSES.has(status),
   );
 }
 
-export function getProblemStatuses(current: number): number[] {
-  return getAllowedNextStatuses(current).filter((s) =>
-    PROBLEM_STATUSES.has(s as ShipmentStatus),
+export function getProblemStatuses(
+  current: ShipmentStatus,
+): ShipmentStatus[] {
+  return getAllowedNextStatuses(current).filter((status) =>
+    PROBLEM_STATUSES.has(status),
   );
 }
 
-export function canCancel(status: number): boolean {
-  return CANCELLABLE_FROM.has(status as ShipmentStatus);
+export function canRepeatTransit(current: ShipmentStatus): boolean {
+  return current === ShipmentStatus.IN_TRANSIT;
 }
 
-export function canFinish(status: number): boolean {
-  return FINISHABLE_FROM.has(status as ShipmentStatus);
+export function canCancel(status: ShipmentStatus): boolean {
+  return CANCELLABLE_FROM.has(status);
 }
 
-export function isTerminal(status: number): boolean {
+export function canFinish(status: ShipmentStatus): boolean {
+  return FINISHABLE_FROM.has(status);
+}
+
+export function isTerminal(status: ShipmentStatus): boolean {
   return (
     status === ShipmentStatus.DELIVERED ||
-    status === ShipmentStatus.CANCELLED ||
-    status === ShipmentStatus.EXTRAVIADO
+    status === ShipmentStatus.CANCELLED
   );
 }
 
-export function isProblem(status: number): boolean {
-  return PROBLEM_STATUSES.has(status as ShipmentStatus);
+export function isProblem(status: ShipmentStatus): boolean {
+  return PROBLEM_STATUSES.has(status);
 }
 
 export function formatCep(cep: string): string {
   const digits = cep.replace(/\D/g, "");
+
   return digits.length === 8
     ? `${digits.slice(0, 5)}-${digits.slice(5)}`
     : cep;

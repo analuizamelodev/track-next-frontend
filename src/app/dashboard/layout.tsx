@@ -1,7 +1,8 @@
 "use client";
 
-import { DashboardNav } from "@/src/components/dashboard-nav";
+import { DashboardSidebar } from "@/src/components/dashboard-sidebar";
 import { useRequireAuth } from "@/src/context/auth-context";
+import { Loader2 } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -12,16 +13,19 @@ export default function DashboardLayout({
 
   if (loading || !isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-slate-500">
+      <div className="flex min-h-screen items-center justify-center gap-3 bg-[#F8FAFC] text-[#6B7280]">
+        <Loader2 className="h-5 w-5 animate-spin text-[#16A34A]" />
         Carregando...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <DashboardNav />
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+    <div className="flex h-screen overflow-hidden bg-[#F8FAFC]">
+      <DashboardSidebar />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <main className="flex-1 overflow-auto px-6 py-8">{children}</main>
+      </div>
     </div>
   );
 }
