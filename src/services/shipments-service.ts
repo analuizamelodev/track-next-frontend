@@ -47,8 +47,14 @@ export async function finish(
   return response.data;
 }
 
-export async function cancel(id: string): Promise<Shipment> {
-  const response = await apiClient.patch<Shipment>(`/shipments/${id}/cancel`);
+export async function cancel(
+  id: string,
+  data?: { description?: string; location?: string },
+): Promise<Shipment> {
+  const response = await apiClient.patch<Shipment>(
+    `/shipments/${id}/cancel`,
+    data ?? {},
+  );
   return response.data;
 }
 

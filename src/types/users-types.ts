@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: UserRole;
   active: boolean;
+  isTempPassword: boolean;
   createdAt: string;
   updatedAt?: string;
 }
@@ -18,8 +19,15 @@ export interface CreateUserDto {
 
 export interface UpdateUserDto {
   name?: string;
+  email?: string;
   role?: UserRole;
   active?: boolean;
+}
+
+export interface ChangePasswordDto {
+  currentPassword?: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export interface UserMutationResponse {

@@ -2,6 +2,7 @@ import { apiClient } from "../libs/api";
 
 export interface LoginResponse {
   access_token: string;
+  isTempPassword: boolean;
 }
 
 export async function login(

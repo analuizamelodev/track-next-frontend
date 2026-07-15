@@ -1,5 +1,6 @@
 import { apiClient } from "../libs/api";
 import {
+  ChangePasswordDto,
   CreateUserDto,
   UpdateUserDto,
   User,
@@ -38,3 +39,14 @@ export async function resetPassword(id: string): Promise<{ message: string }> {
   );
   return response.data;
 }
+
+export async function changePassword(
+  data: ChangePasswordDto,
+): Promise<{ message: string }> {
+  const response = await apiClient.patch<{ message: string }>(
+    "/users/me/password",
+    data,
+  );
+  return response.data;
+}
+

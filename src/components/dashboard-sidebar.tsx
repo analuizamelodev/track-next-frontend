@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronRight,
   UserCircle,
+  Settings,
 } from "lucide-react";
 
 const links = [
@@ -19,6 +20,7 @@ const links = [
   { href: "/dashboard/shipments", label: "Entregas", icon: Truck },
   { href: "/dashboard/customers", label: "Clientes", icon: Users },
   { href: "/dashboard/users", label: "Usuários", icon: UserCircle, adminOnly: true },
+  { href: "/dashboard/profile", label: "Meu perfil", icon: Settings },
 ];
 
 export function DashboardSidebar() {
